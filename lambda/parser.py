@@ -72,12 +72,18 @@ def parse_expression(text: str):
     # Function
     m = re.fullmatch(PAT_FUNCTION, text)
     if m:
-        symbol_text, expr_text = m.groups()
+        symbols, expr_text = m.groups()
 
-        symbol = Symbol(symbol_text)
+        # Consume symbols in reverse order to build nested functions.
+        symbols = list(symbols)
+
         expr = parse_expression(expr_text)
+        func = Function(Symbol(symbols.pop()), expr)
 
-        return Function(symbol, expr)
+        while len(symbols) > 0:
+            func = Function(Symbol(symbols.pop()), func)
+
+        return func
 
     # Application
     m = re.fullmatch(PAT_APPLICATION, text)
