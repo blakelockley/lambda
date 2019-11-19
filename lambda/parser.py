@@ -17,14 +17,52 @@ class ParserError(Exception):
     pass
 
 
+def match_parans(text: str):
+    """
+    Return a list of expr_text at the top level of 'text'.
+    """
+
+    # TODO: Have this split top level expressions
+
+    if text[0] != "(":
+        return []
+
+    result = []
+    start = 0
+    counter = 0
+
+    for pos, char in enumerate(text):
+
+        if char == "(":
+            counter += 1
+
+        elif char == ")":
+            counter -= 1
+
+        if counter == 0:
+            expr_text = text[start + 1 : pos]
+            result.append(expr_text)
+
+            # Resest counter
+            counter = 0
+            start = pos + 1
+
+    return result
+
+
 def parse_expression(text: str):
 
-    print("#", text)
+    # Top-level (relative) expressions
+    exprs = match_parans(text)
 
-    # Explict Expression (by parans)
-    m = re.fullmatch(PAT_EXP_PARANS, text)
-    if m:
-        return parse_expression(m.group(1))
+    if len(exprs) >= 1:
+        expr = parse_expression(exprs.pop())
+
+        while len(exprs) > 0:
+            expr_1 = parse_expression(exprs.pop())
+            expr = Application(expr_1, expr)
+
+        return expr
 
     # Symbol
     m = re.fullmatch(PAT_SYMBOL, text)
