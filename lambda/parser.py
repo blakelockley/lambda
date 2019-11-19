@@ -3,14 +3,14 @@ from ltypes import Symbol, Function, Application, Definition
 
 # Expression
 PAT_SYMBOL = re.compile(r"[a-z]")  # x
-PAT_FUNCTION = re.compile(r"\\([a-z])\.(.+)")  # \x.<expr>
-PAT_EXP_PARANS = re.compile(r"\((.+)\)")  # (<expr>)
+PAT_FUNCTION = re.compile(r"\\([a-z]+)\.(.+)")  # \x.<expr>
 
 # Application
-PAT_APPLICATION = re.compile(r"(.+?)([a-z]|\\[a-z]\..+|\(.+\))")
+#   <expr><x|\x.<expr>|(<expr>)>
+PAT_APPLICATION = re.compile(r"(.+)([a-z]|\\[a-z]+\..+|\(.+\))")
 
 # Defintion
-PAT_DEFINITION = re.compile(r"([A-Z0-9])\s*=\s*(.*)")  # S = <expr>
+PAT_DEFINITION = re.compile(r"([A-Z0-9])\s*=\s*(.+)")  # S = <expr>
 
 
 class ParserError(Exception):
