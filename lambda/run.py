@@ -1,4 +1,4 @@
-from parser import parse
+from lparser import parse
 from debug import print_debug
 
 text_I = r"I = \x.xy"
@@ -11,9 +11,11 @@ text_Z = r"Z = \xy.xyz"
 
 text = text_M
 
-defns = parse(text)
+if __name__ == "__main__":
 
-print(text)
-for defn in defns.values():
-    print(repr(defn))
-    print_debug(defn)
+    defns = parse(text)
+
+    print(text)
+    for defn in defns.values():
+        print(repr(defn))
+        print_debug(defn)
