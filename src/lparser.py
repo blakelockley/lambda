@@ -70,7 +70,7 @@ def split_expression(text: str):
                 expr_text = strip_parans(text[start + 1 : pos])
 
                 if len(expr_text) == 0:
-                    raise ParserError(f"Empty parans in snippet {line} are invalid.")
+                    raise ParserError(f"Empty parans in snippet {text} are invalid.")
 
                 result.append(expr_text)
 
