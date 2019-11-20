@@ -1,5 +1,5 @@
 import re
-from .ltypes import Symbol, Function, Application
+from .ltypes import Symbol, Function, Application, Definition, DefinitionCall
 from .lexceptions import ParserError
 
 # Expression
@@ -9,6 +9,10 @@ PAT_FUNCTION = re.compile(r"\\([a-z]+)\.(.+)")  # \x.<expr>
 # Application
 #   <expr><x|\x.<expr>|(<expr>)>
 PAT_APPLICATION = re.compile(r"(.+)([a-z]|\\[a-z]+\..+|\(.+\))")
+
+# Defintion
+PAT_DEFINITION = re.compile(r"(\w+)\s*=\s*(.+)")  # defn = <expr>
+PAT_DEFINITION_CALL = re.compile(r"\$\(?\w+\)?")  # $defn | $(defn)
 
 
 def split_expression(text: str):
