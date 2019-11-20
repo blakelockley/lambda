@@ -1,4 +1,4 @@
-from ltypes import Definition, Function, Application
+from .ltypes import Definition, Function, Application
 
 
 def print_debug(expr, *, indent=0, increment=2):

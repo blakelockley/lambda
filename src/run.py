@@ -1,21 +1,15 @@
-from lparser import parse
-from debug import print_debug
+from .lparser import parse_expression
+from .lreducer import reduce_expression
+from .debug import print_debug
 
-text_I = r"I = \x.xy"
-text_0 = r"0 = \s.(\z.z)"
-text_1 = r"1 = \sz.s(z)"
-text_S = r"S = \w.(\y.(\x.y(wyx)))"
-text_M = r"M = (\xyz.x(yz))(\sz.(sz))(\sz.(sz))"
-text_A = r"A = (\x.x)y"
-text_Z = r"Z = \xy.xyz"
-
-text = text_M
 
 if __name__ == "__main__":
 
-    defns = parse(text)
+    text = "(\\xy.x)a"  # -> \y.a
 
-    print(text)
-    for defn in defns.values():
-        print(repr(defn))
-        print_debug(defn)
+    expr = parse_expression(text)
+    print(repr(expr))
+
+    reduced = reduce_expression(expr)
+
+    print(repr(reduced))
