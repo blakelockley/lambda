@@ -1,5 +1,5 @@
 import re
-from .ltypes import Symbol, Function, Application, Definition
+from .ltypes import Symbol, Function, Application
 
 # Expression
 PAT_SYMBOL = re.compile(r"[a-z]")  # x
@@ -8,9 +8,6 @@ PAT_FUNCTION = re.compile(r"\\([a-z]+)\.(.+)")  # \x.<expr>
 # Application
 #   <expr><x|\x.<expr>|(<expr>)>
 PAT_APPLICATION = re.compile(r"(.+)([a-z]|\\[a-z]+\..+|\(.+\))")
-
-# Defintion
-PAT_DEFINITION = re.compile(r"([A-Z0-9])\s*=\s*(.+)")  # S = <expr>
 
 # Expressions
 PAT_NESTED_PARANS = re.compile(r"\((.+)\)")
@@ -134,25 +131,3 @@ def parse_expression(text: str):
         return Application(expr_1, expr_2)
 
     raise ParserError(f"Unable to parse expression: {text}")
-
-
-def parse(source: str):
-
-    definitions = {}
-
-    lines = (line for line in source.split("\n") if len(line) > 0)
-    for line in lines:
-        m = re.fullmatch(PAT_DEFINITION, line)
-
-        if not m:
-            raise ParserError(
-                "Top level statements must be named function definitions."
-            )
-
-        name, expr_text = m.groups()
-        expr = parse_expression(expr_text)
-
-        defn = Definition(name, expr)
-        definitions[name] = defn
-
-    return definitions

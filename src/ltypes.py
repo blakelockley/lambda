@@ -55,32 +55,3 @@ class Application(Expression):
             return False
 
         return self.expr_1 == other.expr_1 and self.expr_2 == other.expr_2
-
-
-class Definition:
-    def __init__(self, name, func):
-        self.name = name
-        self.func = func
-
-    def __repr__(self):
-        return f"Definition({repr(self.name)}, {repr(self.func)})"
-
-    def __str__(self):
-        return f"{self.name} = {self.func}"
-
-    def __eq__(self, other):
-        return self.name == other.name and self.func == other.func
-
-
-class DefinitionCall(Expression):
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        return f"DefinitionCall({repr(self.name)})"
-
-    def __str__(self):
-        return f"{self.name}"
-
-    def __eq__(self):
-        return self.name == other.name
