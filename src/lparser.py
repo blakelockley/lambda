@@ -17,15 +17,17 @@ class ParserError(Exception):
     pass
 
 
-def match_parans(text: str):
+def split_expressions(text: str):
     """
     Return a list of expr_text at the top level of 'text'.
     """
 
-    # TODO: Have this split top level expressions
+    if len(text) == 0:
+        raise ParserError("Unable to split expressions from empty string.")
 
-    if text[0] != "(":
-        return []
+    # Check if the expression is a function, if so return as is
+    if text[0] == "\\":
+        return [text] 
 
     result = []
     start = 0
@@ -34,18 +36,38 @@ def match_parans(text: str):
     for pos, char in enumerate(text):
 
         if char == "(":
+            # Check of we finished parsing free text
+            if counter == 0:
+                # Check if valid free text
+                if start != pos:
+                    result.append(text[start: pos])
+
+                # Record opening paran pos
+                start = pos
+
             counter += 1
+
 
         elif char == ")":
             counter -= 1
 
-        if counter == 0:
-            expr_text = text[start + 1 : pos]
-            result.append(expr_text)
+            # Check if we finished parsing parans
+            if counter == 0:
+                expr_text = text[start + 1 : pos]
 
-            # Resest counter
-            counter = 0
-            start = pos + 1
+                if len(expr_text) == 0:
+                    raise ParserError(f"Empty parans in snippet {line} are invalid.") 
+                    
+                result.append(expr_text)
+
+                # Resest counter
+                counter = 0
+                start = pos + 1
+
+    # Append trailing free text
+    if start < len(text):
+        expr_text = text[start:]
+        result.append(expr_text)
 
     return result
 
@@ -53,9 +75,12 @@ def match_parans(text: str):
 def parse_expression(text: str):
 
     # Top-level (relative) expressions
-    exprs = match_parans(text)
+    exprs = split_expressions(text)
 
-    if len(exprs) >= 1:
+    if len(exprs) == 1:
+        text = exprs[0]
+
+    elif len(exprs) >= 2:
         expr = parse_expression(exprs.pop())
 
         while len(exprs) > 0:
