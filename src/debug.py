@@ -20,4 +20,3 @@ def print_debug(expr, *, indent=0, increment=2):
 
     else:
         print(" " * indent + repr(expr))
-
