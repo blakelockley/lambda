@@ -1,5 +1,5 @@
 import re
-from ltypes import Symbol, Function, Application, Definition
+from .ltypes import Symbol, Function, Application, Definition
 
 # Expression
 PAT_SYMBOL = re.compile(r"[a-z]")  # x

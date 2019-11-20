@@ -12,6 +12,9 @@ class Symbol(Expression):
     def __str__(self):
         return self.name
 
+    def __eq__(self, other):
+        return self.name == other.name
+
 
 class Function(Expression):
     def __init__(self, symbol, expr):
@@ -22,7 +25,12 @@ class Function(Expression):
         return f"Function({repr(self.symbol)}, {repr(self.expr)})"
 
     def __str__(self):
-        return f"\{self.symbol}. {self.expr})"
+        return f"\\{self.symbol}. {self.expr})"
+
+    def __eq__(self, other):
+        # TODO: Implement true equivalence independant of variable name
+        #   e.g. \x.xy == \s.sz (True)
+        return self.symbol == other.symbol and self.expr == other.expr
 
 
 class Application(Expression):
@@ -36,6 +44,9 @@ class Application(Expression):
     def __str__(self):
         return f"({self.expr_1}) ({self.expr_2})"
 
+    def __eq__(self, other):
+        return self.expr_1 == other.expr_1 and self.expr_2 == other.expr_2
+
 
 class Definition:
     def __init__(self, name, func):
@@ -48,6 +59,9 @@ class Definition:
     def __str__(self):
         return f"{self.name} = {self.func}"
 
+    def __eq__(self, other):
+        return self.name == other.name and self.func == other.func
+
 
 class DefinitionCall(Expression):
     def __init__(self, name):
@@ -59,3 +73,5 @@ class DefinitionCall(Expression):
     def __str__(self):
         return f"{self.name}"
 
+    def __eq__(self):
+        return self.name == other.name
