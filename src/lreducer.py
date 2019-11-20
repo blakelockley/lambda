@@ -39,7 +39,7 @@ def replace_symbol(
     raise ReducerError(f"Unable to replace {target} in {expr}.")
 
 
-def reduce_expression(expr: Expression) -> Expression:
+def reduce_expression_iteration(expr: Expression) -> Expression:
 
     # Application
     if isinstance(expr, Application):
@@ -50,12 +50,26 @@ def reduce_expression(expr: Expression) -> Expression:
             symbol = lhs.symbol
             return replace_symbol(symbol, lhs.expr, rhs)
 
+        reduced_rhs = reduce_expression_iteration(rhs)
+        reduced_lhs = reduce_expression_iteration(lhs)
+        return Application(reduced_lhs, reduced_rhs)
+
     # Function
     if isinstance(expr, Function):
-        return Function(expr.symbol, reduce_expression(expr.expr))
+        return Function(expr.symbol, reduce_expression_iteration(expr.expr))
 
     # Symbol (Leaf)
     if isinstance(expr, Symbol):
         return expr
 
     raise ReducerError(f"Unable to reduce expression: {expr}.")
+
+
+def reduce_expression(expr: Expression) -> Expression:
+
+    reduced = reduce_expression_iteration(expr)
+    while reduced != expr:
+        expr = reduced
+        reduced = reduce_expression_iteration(expr)
+
+    return reduced
