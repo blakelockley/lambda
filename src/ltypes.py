@@ -28,7 +28,15 @@ class Function(Expression):
         return f"Function({repr(self.symbol)}, {repr(self.expr)})"
 
     def __str__(self):
-        return f"\\{self.symbol}. {self.expr})"
+        symbols = [self.symbol]
+        expr = self.expr
+
+        while isinstance(expr, Function):
+            symbols.append(expr.symbol)
+            expr = expr.expr
+
+        symbol_str = str().join(map(str, symbols))
+        return f"\\{symbol_str}.{expr}"
 
     def __eq__(self, other):
         if not isinstance(other, Function):
@@ -48,7 +56,15 @@ class Application(Expression):
         return f"Application({repr(self.expr_1)}, {repr(self.expr_2)})"
 
     def __str__(self):
-        return f"({self.expr_1}) ({self.expr_2})"
+        a = str(self.expr_1)
+        if not isinstance(self.expr_1, Symbol):
+            a = f"({a})"
+
+        b = str(self.expr_2)
+        if not isinstance(self.expr_2, Symbol):
+            b = f"({b})"
+
+        return f"{a}{b}"
 
     def __eq__(self, other):
         if not isinstance(other, Application):
