@@ -1,4 +1,4 @@
-from ..src.lparser import parse_expression
+from ..src.lparser import parse_expression, split_expressions
 from ..src.ltypes import Symbol, Function, Application
 
 
@@ -32,6 +32,33 @@ def test_function_nested():
         Function(
             Symbol('z'),
             Symbol('z')
+        )
+    )
+
+def test_function_nested_no_parans():
+    text = r"\x.\z.z"
+    expr = parse_expression(text)
+
+    assert expr == Function(
+        Symbol('x'),
+        Function(
+            Symbol('z'),
+            Symbol('z')
+        )
+    )
+
+def test_function_nested_no_parans_application():
+    text = r"\x.\z.z(a)"
+    expr = parse_expression(text)
+
+    assert expr == Function(
+        Symbol('x'),
+        Function(
+            Symbol('z'),
+            Application(
+                Symbol('z'),
+                Symbol('a')
+            )
         )
     )
 
@@ -83,19 +110,17 @@ def test_func_func_no_parans_after():
         )
     )
 
-def test_func_symbol__nested_func():
+def test_func_symbol_nested_func():
     text = r"\x.x(\y.y)"
     expr = parse_expression(text)
 
-    assert expr == Application(
-        Function(
+    assert expr == Function(
+        Symbol('x'),
+        Application(
             Symbol('x'),
-            Application(
-                Symbol('x'),
-                Function(
-                    Symbol('y'),
-                    Symbol('y')
-                )
+            Function(
+                Symbol('y'),
+                Symbol('y')
             )
         )
     )
@@ -120,3 +145,38 @@ def test_func_nested_func_application():
             )
         )
     )
+
+
+def test_split_expressions():
+    text = "(a)(b)"
+    expr_texts = split_expressions(text)
+
+    assert expr_texts == ["a", "b"]
+    
+    text = "a(b)"
+    expr_texts = split_expressions(text)
+
+    assert expr_texts == ["a", "b"]
+
+    text = "(a)b"
+    expr_texts = split_expressions(text)
+
+    assert expr_texts == ["a", "b"]
+    
+    text = "(a)b(c)"
+    expr_texts = split_expressions(text)
+
+    assert expr_texts == ["a", "b", "c"]
+    
+    text = "a(b)c"
+    expr_texts = split_expressions(text)
+
+    assert expr_texts == ["a", "b", "c"]
+
+
+def test_split_expressions_func():
+    text = r"\x.(\y.y)"
+    expr_texts = split_expressions(text)
+
+    assert expr_texts == [r"\x.(\y.y)"]
+    
