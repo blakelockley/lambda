@@ -13,6 +13,9 @@ class Symbol(Expression):
         return self.name
 
     def __eq__(self, other):
+        if not isinstance(other, Symbol):
+            return False
+
         return self.name == other.name
 
 
@@ -28,6 +31,9 @@ class Function(Expression):
         return f"\\{self.symbol}. {self.expr})"
 
     def __eq__(self, other):
+        if not isinstance(other, Function):
+            return False
+
         # TODO: Implement true equivalence independant of variable name
         #   e.g. \x.xy == \s.sz (True)
         return self.symbol == other.symbol and self.expr == other.expr
@@ -45,6 +51,9 @@ class Application(Expression):
         return f"({self.expr_1}) ({self.expr_2})"
 
     def __eq__(self, other):
+        if not isinstance(other, Application):
+            return False
+
         return self.expr_1 == other.expr_1 and self.expr_2 == other.expr_2
 
 
