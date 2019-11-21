@@ -1,5 +1,6 @@
 import re
 from .ltypes import Symbol, Function, Application
+from .lexceptions import ParserError
 
 # Expression
 PAT_SYMBOL = re.compile(r"[a-z]")  # x
@@ -11,10 +12,6 @@ PAT_APPLICATION = re.compile(r"(.+)([a-z]|\\[a-z]+\..+|\(.+\))")
 
 # Expressions
 PAT_NESTED_PARANS = re.compile(r"\((.+)\)")
-
-
-class ParserError(Exception):
-    pass
 
 
 def strip_parans(text: str):

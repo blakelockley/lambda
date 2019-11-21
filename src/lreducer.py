@@ -1,10 +1,6 @@
 from typing import Tuple, List
 from .ltypes import Expression, Application, Function, Symbol
-
-
-class ReducerError(Exception):
-    pass
-
+from .lexceptions import ReducerError
 
 Bindings = Tuple[List[Symbol], List[Symbol]]
 
