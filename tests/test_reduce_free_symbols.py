@@ -37,15 +37,15 @@ def test_reduce_symbols_free_name_in_appl():
     assert frees == [Symbol("c")]
 
 
-def test_reduce_symbols_bound_name_in_appl():
+def test_reduce_symbols_bound_name_in_func():
 
     # <name> is bound in λ<name1>.<exp> if the identifier <name>=<name1> or if <name> is bound in <exp>.
-    # λa.a -> []
+    # λa.a -> [Symbol('a')]
 
-    expr = parse_expression(r"(\a.ac)(\b.b)")
-    frees, _ = find_variable_bindings(expr)
+    expr = parse_expression(r"(\a.a)")
+    _, bounds = find_variable_bindings(expr)
 
-    assert Symbol("a") not in frees
+    assert bounds == [Symbol("a")]
 
 
 def test_reduce_symbols_bound_name_in_appl():
