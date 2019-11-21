@@ -56,6 +56,36 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
     return (free_symbols, bound_symbols)
 
 
+def rename_symbol(expr, target_symbol):
+
+    new_symbol = Symbol("t")
+
+    if isinstance(expr, Symbol):
+        symbol = expr
+        if symbol == target_symbol:
+            return new_symbol
+
+        return symbol
+
+    elif isinstance(expr, Function):
+        func = expr
+
+        if func.symbol == target_symbol:
+            return Function(new_symbol, rename_symbol(func.expr, target_symbol))
+
+        return Function(func.symbol, rename_symbol(func.expr, target_symbol))
+
+    elif isinstance(expr, Application):
+        appl = expr
+
+        expr_1 = rename_symbol(appl.expr_1, target_symbol)
+        expr_2 = rename_symbol(appl.expr_2, target_symbol)
+
+        return Application(expr_1, expr_2)
+
+    raise ReducerError(f"Unable to rename symbol for function {func}.")
+
+
 def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expression:
 
     # Symbol
@@ -74,6 +104,16 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
 
         # Transverse further to find and replace symbol
         else:
+            _, func_bounds = find_variable_bindings(func)
+            new_expr_frees, _ = find_variable_bindings(new_expr)
+
+            print("func_bounds", func_bounds)
+            print("new_expr_frees", new_expr_frees)
+
+            for s in func_bounds:
+                if s in new_expr_frees:
+                    func = rename_symbol(func, s)
+
             body_expr = substitute(target, func.expr, new_expr)
             return Function(func.symbol, body_expr)
 
