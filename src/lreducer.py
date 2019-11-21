@@ -56,9 +56,7 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
     return (free_symbols, bound_symbols)
 
 
-def replace_symbol(
-    target: Symbol, expr: Expression, new_expr: Expression
-) -> Expression:
+def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expression:
 
     # Symbol
     if isinstance(expr, Symbol):
@@ -76,14 +74,14 @@ def replace_symbol(
 
         # Transverse further to find and replace symbol
         else:
-            body_expr = replace_symbol(target, func.expr, new_expr)
+            body_expr = substitute(target, func.expr, new_expr)
             return Function(func.symbol, body_expr)
 
     # Application
     if isinstance(expr, Application):
         appl = expr
-        expr_1 = replace_symbol(target, appl.expr_1, new_expr)
-        expr_2 = replace_symbol(target, appl.expr_2, new_expr)
+        expr_1 = substitute(target, appl.expr_1, new_expr)
+        expr_2 = substitute(target, appl.expr_2, new_expr)
 
         return Application(expr_1, expr_2)
 
@@ -99,7 +97,7 @@ def reduce_expression_iteration(expr: Expression) -> Expression:
 
         if isinstance(lhs, Function):
             symbol = lhs.symbol
-            return replace_symbol(symbol, lhs.expr, rhs)
+            return substitute(symbol, lhs.expr, rhs)
 
         reduced_rhs = reduce_expression_iteration(rhs)
         reduced_lhs = reduce_expression_iteration(lhs)
