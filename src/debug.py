@@ -15,3 +15,26 @@ def print_debug(expr, *, indent=0, increment=2):
 
     else:
         print(" " * indent + repr(expr))
+
+
+def assert_comparison(actual, expected, *, expected_result=True):
+
+    actual_result = actual == expected
+
+    if actual_result != expected_result:
+
+        if expected_result is True:  # verbose
+            print("* Actual")
+            print_debug(actual)
+
+            print()  # blank line
+            print("* Expected")
+            print_debug(expected)
+
+            raise AssertionError(f"Compared expressions are not equal.")
+
+        else:
+            print("* Expression")
+            print_debug(actual)
+
+            raise AssertionError(f"Compared expressions are equal (unexpected).")
