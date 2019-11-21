@@ -1,5 +1,6 @@
 from ..src.ltypes import Symbol, Function, Application
 from ..src.lreducer import reduce_expression
+from ..src.debug import assert_comparison
 
 
 def test_reduce_symbol():
@@ -44,7 +45,6 @@ def test_reduce_function_application_body():
 def test_reduce_function_reused_names():
 
     # Reduce should not change the bound symbol in the nested function
-    # (\x.(\x.x)x)a -> (\x.x)a
 
     expr = Application(
         Function(
@@ -54,4 +54,29 @@ def test_reduce_function_reused_names():
     )
     reduced = reduce_expression(expr)
 
-    assert reduced == Application(Function(Symbol("x"), Symbol("x")), Symbol("a"))
+    assert reduced == Symbol("a")
+
+
+def test_reduce_function_reused_names_free():
+
+    # Error:    (λx.(λy.xy))y -> (λy.yy)
+    # Expected: (λx.(λy.xy))y -> (λt.yt) (where y is renamed t)
+
+    expr = Application(
+        Function(
+            Symbol("x"), Function(Symbol("y"), Application(Symbol("x"), Symbol("y")))
+        ),
+        Symbol("y"),
+    )
+
+    reduced = reduce_expression(expr)
+
+    error = Function(Symbol("y"), Application(Symbol("y"), Symbol("y")))
+    expected = Function(Symbol("t"), Application(Symbol("y"), Symbol("t")))
+
+    # Error
+    assert_comparison(reduced, error, expected_result=False)
+
+    # Expected
+    assert_comparison(reduced, expected)
+
