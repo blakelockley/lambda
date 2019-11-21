@@ -6,9 +6,10 @@ class ReducerError(Exception):
     pass
 
 
-def find_variable_bindings(
-    expr, *, _bound_symbols=[]
-) -> Tuple[List[Symbol], List[Symbol]]:
+Bindings = Tuple[List[Symbol], List[Symbol]]
+
+
+def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
 
     # Free
     # <name> is free in <name>.
@@ -19,50 +20,44 @@ def find_variable_bindings(
     # <name> is bound in λ<name1>.<exp> if the identifier <name>=<name1> or if <name> is bound in <exp>.
     # <name> is bound in E1E2 if <name> is bound in E1 or if it is bound in E2.
 
-    free_symbols = []
-    nested_bound_symbols = []
+    func_symbols = _func_symbols.copy()
 
-    bound_symbols = _bound_symbols.copy()
+    free_symbols = []
+    bound_symbols = []
 
     if isinstance(expr, Symbol):
         symbol = expr
-        if symbol not in bound_symbols:
+        if symbol not in func_symbols:
             free_symbols.append(symbol)
 
     elif isinstance(expr, Function):
         func = expr
-        bound_symbols.append(func.symbol)
+        func_symbols.append(func.symbol)
 
-        func_free_symbols, func_bound_symbols = find_variable_bindings(
-            func.expr, _bound_symbols=bound_symbols
-        )
-
-        free_symbols.extend(func_free_symbols)
-        nested_bound_symbols.extend(func_free_symbols)
+        frees, bounds = find_variable_bindings(func.expr, _func_symbols=func_symbols)
+        free_symbols.extend(frees)
+        bound_symbols.extend([func.symbol] + bounds)
 
     elif isinstance(expr, Application):
         appl = expr
 
-        fs, bs = find_variable_bindings(appl.expr_1, _bound_symbols=bound_symbols)
-        free_symbols.extend(fs)
-        nested_bound_symbols.extend(bs)
+        bindings_1 = find_variable_bindings(appl.expr_1, _func_symbols=func_symbols)
+        bindings_2 = find_variable_bindings(appl.expr_2, _func_symbols=func_symbols)
 
-        fs, bs = find_variable_bindings(appl.expr_2, _bound_symbols=bound_symbols)
-        free_symbols.extend(fs)
-        nested_bound_symbols.extend(bs)
+        frees, bounds = bindings_1
+        free_symbols.extend(frees)
+        bound_symbols.extend(bounds)
+
+        frees, bounds = bindings_2
+        free_symbols.extend(frees)
+        bound_symbols.extend(bounds)
 
     else:
         raise ReducerError(
             f"Unable to find free vairables for expression {expr} of invalid type {expr.__class__}."
         )
 
-    return (free_symbols, nested_bound_symbols)
-
-
-def find_free_variables(expr: Expression, *, _bound_symbols=[]) -> List[Symbol]:
-
-    # TODO: Update tests to not depend on this function
-    return find_variable_bindings(expr)[0]
+    return (free_symbols, bound_symbols)
 
 
 def replace_symbol(
