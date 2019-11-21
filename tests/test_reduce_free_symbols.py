@@ -1,6 +1,6 @@
 from ..src.ltypes import Symbol, Function, Application
 from ..src.lparser import parse_expression
-from ..src.lreducer import find_free_variables
+from ..src.lreducer import find_free_variables, find_variable_bindings
 from ..src.debug import assert_comparison
 
 
@@ -56,21 +56,10 @@ def test_reduce_symbols_bound_name_in_appl():
     #   (λa.a)(λb.ba)
 
     expr = parse_expression(r"(\a.a)(\b.ba)")
-    frees = find_free_variables(expr)
+    frees, bounds = find_variable_bindings(expr)
 
     assert Symbol("a") in frees
-
-    expr = parse_expression(r"(\a.a)")
-    frees = find_free_variables(expr)
-
-    assert Symbol("a") not in frees
-
-    expr = parse_expression(r"(\b.ba)")
-    frees = find_free_variables(expr)
-
-    assert Symbol("a") in frees
-
-    assert False
+    assert Symbol("a") in bounds
 
 
 def test_reduce_rename_symbols_find_free_basic():

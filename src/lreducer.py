@@ -1,4 +1,4 @@
-from typing import List
+from typing import Tuple, List
 from .ltypes import Expression, Application, Function, Symbol
 
 
@@ -6,7 +6,9 @@ class ReducerError(Exception):
     pass
 
 
-def find_free_variables(expr: Expression, *, _bound_symbols=[]) -> List[Symbol]:
+def find_variable_bindings(
+    expr, *, _bound_symbols=[]
+) -> Tuple[List[Symbol], List[Symbol]]:
 
     # Free
     # <name> is free in <name>.
@@ -18,6 +20,8 @@ def find_free_variables(expr: Expression, *, _bound_symbols=[]) -> List[Symbol]:
     # <name> is bound in E1E2 if <name> is bound in E1 or if it is bound in E2.
 
     free_symbols = []
+    nested_bound_symbols = []
+
     bound_symbols = _bound_symbols.copy()
 
     if isinstance(expr, Symbol):
@@ -29,25 +33,36 @@ def find_free_variables(expr: Expression, *, _bound_symbols=[]) -> List[Symbol]:
         func = expr
         bound_symbols.append(func.symbol)
 
-        func_free_symbols = find_free_variables(func.expr, _bound_symbols=bound_symbols)
+        func_free_symbols, func_bound_symbols = find_variable_bindings(
+            func.expr, _bound_symbols=bound_symbols
+        )
+
         free_symbols.extend(func_free_symbols)
+        nested_bound_symbols.extend(func_free_symbols)
 
     elif isinstance(expr, Application):
         appl = expr
 
-        free_symbols.extend(
-            find_free_variables(appl.expr_1, _bound_symbols=bound_symbols)
-        )
-        free_symbols.extend(
-            find_free_variables(appl.expr_2, _bound_symbols=bound_symbols)
-        )
+        fs, bs = find_variable_bindings(appl.expr_1, _bound_symbols=bound_symbols)
+        free_symbols.extend(fs)
+        nested_bound_symbols.extend(bs)
+
+        fs, bs = find_variable_bindings(appl.expr_2, _bound_symbols=bound_symbols)
+        free_symbols.extend(fs)
+        nested_bound_symbols.extend(bs)
 
     else:
         raise ReducerError(
             f"Unable to find free vairables for expression {expr} of invalid type {expr.__class__}."
         )
 
-    return free_symbols
+    return (free_symbols, nested_bound_symbols)
+
+
+def find_free_variables(expr: Expression, *, _bound_symbols=[]) -> List[Symbol]:
+
+    # TODO: Update tests to not depend on this function
+    return find_variable_bindings(expr)[0]
 
 
 def replace_symbol(
