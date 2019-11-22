@@ -2,6 +2,18 @@ from typing import Tuple, List
 from .ltypes import Expression, Application, Function, Symbol
 from .lexceptions import ReducerError
 
+# Backup symbols to be used in renaming conflicting bound vs free symbols
+#   It is deseriable to use uncommon symbols to avoid replacing already replaced symbols
+# Common symbol collections:
+#   - ab
+#   - uv
+#   - sz    (numbers)
+#   - xyzw
+#   - r     (recursion)
+# The symbol 't' is often used for the renamed symbol
+#   After this iterate through the alphabet natually, skipping reserved symbols
+SYMBOL_BACKUPS = map(Symbol, "tcdefghijklmnopq")
+
 Bindings = Tuple[List[Symbol], List[Symbol]]
 
 
@@ -56,9 +68,7 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
     return (free_symbols, bound_symbols)
 
 
-def rename_symbol(expr, target_symbol):
-
-    new_symbol = Symbol("t")
+def rename_symbol(expr, target_symbol, new_symbol):
 
     if isinstance(expr, Symbol):
         symbol = expr
@@ -69,21 +79,22 @@ def rename_symbol(expr, target_symbol):
 
     elif isinstance(expr, Function):
         func = expr
+        func_expr = rename_symbol(func.expr, target_symbol, new_symbol)
 
         if func.symbol == target_symbol:
-            return Function(new_symbol, rename_symbol(func.expr, target_symbol))
+            return Function(new_symbol, func_expr)
 
-        return Function(func.symbol, rename_symbol(func.expr, target_symbol))
+        return Function(func.symbol, func_expr)
 
     elif isinstance(expr, Application):
         appl = expr
 
-        expr_1 = rename_symbol(appl.expr_1, target_symbol)
-        expr_2 = rename_symbol(appl.expr_2, target_symbol)
+        expr_1 = rename_symbol(appl.expr_1, target_symbol, new_symbol)
+        expr_2 = rename_symbol(appl.expr_2, target_symbol, new_symbol)
 
         return Application(expr_1, expr_2)
 
-    raise ReducerError(f"Unable to rename symbol for function {func}.")
+    raise ReducerError(f"Unable to rename symbol for expression {expr}.")
 
 
 def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expression:
@@ -104,15 +115,24 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
 
         # Transverse further to find and replace symbol
         else:
-            _, func_bounds = find_variable_bindings(func)
+            func_frees, func_bounds = find_variable_bindings(func)
             new_expr_frees, _ = find_variable_bindings(new_expr)
 
-            print("func_bounds", func_bounds)
-            print("new_expr_frees", new_expr_frees)
+            # Rename any symbols that will conflict
+            renamable_symbols = [s for s in func_bounds if s in new_expr_frees]
+            for s in renamable_symbols:
+                func_symbols = func_frees + func_bounds
 
-            for s in func_bounds:
-                if s in new_expr_frees:
-                    func = rename_symbol(func, s)
+                new_symbol = next(
+                    filter(lambda s: s not in func_symbols, SYMBOL_BACKUPS), None
+                )
+
+                if new_symbol is None:
+                    raise ReducerError(
+                        "Unable to rename symbol {s} as all replacement symbols are exhausted."
+                    )
+
+                func = rename_symbol(func, s, new_symbol)
 
             body_expr = substitute(target, func.expr, new_expr)
             return Function(func.symbol, body_expr)
