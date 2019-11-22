@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Iterator
 from .ltypes import Expression, Application, Function, Symbol
 from .lexceptions import ReducerError
 
@@ -148,48 +148,68 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
     raise ReducerError(f"Unable to replace '{target}' in '{expr}'.")
 
 
+# Recursive helper function
+def reduce(expr):
+
+    # Application
+    if isinstance(expr, Application):
+        lhs = expr.expr_1
+        rhs = expr.expr_2
+
+        if isinstance(lhs, Function):
+            symbol = lhs.symbol
+            return substitute(symbol, lhs.expr, rhs)
+
+        reduced_rhs = reduce(rhs)
+        reduced_lhs = reduce(lhs)
+        return Application(reduced_lhs, reduced_rhs)
+
+    # Function
+    if isinstance(expr, Function):
+        return Function(expr.symbol, reduce(expr.expr))
+
+    # if isinstance(expr, DefinitionCall):
+    #     name =
+
+    # Symbol (Leaf)
+    if isinstance(expr, Symbol):
+        return expr
+
+    raise ReducerError(f"Unable to reduce expression:\n    '{expr}'")
+
+
 def reduce_expression(expr: Expression, definitions={}) -> Expression:
-
-    # Recursive helper function
-    def _reduce(expr):
-
-        # Application
-        if isinstance(expr, Application):
-            lhs = expr.expr_1
-            rhs = expr.expr_2
-
-            if isinstance(lhs, Function):
-                symbol = lhs.symbol
-                return substitute(symbol, lhs.expr, rhs)
-
-            reduced_rhs = _reduce(rhs)
-            reduced_lhs = _reduce(lhs)
-            return Application(reduced_lhs, reduced_rhs)
-
-        # Function
-        if isinstance(expr, Function):
-            return Function(expr.symbol, _reduce(expr.expr))
-
-        # if isinstance(expr, DefinitionCall):
-        #     name =
-
-        # Symbol (Leaf)
-        if isinstance(expr, Symbol):
-            return expr
-
-        raise ReducerError(f"Unable to reduce expression:\n    '{expr}'")
+    """
+    Reduce expression to simplest form
+    """
 
     # Reduce and loop
-    reduced = _reduce(expr)
+    reduced = reduce(expr)
+    while reduced != expr:
+        expr = reduced
+        reduced = reduce(expr)
 
-    # If expr is already reduced, yeild expr as is
+    return expr
+
+
+def generate_reduced_expressions(
+    expr: Expression, definitions={}
+) -> Iterator[Expression]:
+    """
+    Reduce expression by yeild each intermediate stage after reducing
+    """
+
+    # Reduce original expression
+    reduced = reduce(expr)
+
+    # If original expression is already reduced, yeild expr as is
     if reduced == expr:
         yield expr
 
     # Continue to reduce and yield intermediate stages
     while reduced != expr:
         expr = reduced
-        reduced = _reduce(expr)
+        reduced = reduce(expr)
 
         yield expr
 
