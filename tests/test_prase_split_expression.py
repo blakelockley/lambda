@@ -32,7 +32,7 @@ def test_split_expression_double_parans():
     text = "((a))"
     expr_texts = split_expression(text)
 
-    assert expr_texts == ["a"]
+    assert expr_texts == ["(a)"]
 
 
 def test_split_expression_func():

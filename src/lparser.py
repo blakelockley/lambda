@@ -10,20 +10,6 @@ PAT_FUNCTION = re.compile(r"\\([a-z]+)\.(.+)")  # \x.<expr>
 #   <expr><x|\x.<expr>|(<expr>)>
 PAT_APPLICATION = re.compile(r"(.+)([a-z]|\\[a-z]+\..+|\(.+\))")
 
-# Expressions
-PAT_NESTED_PARANS = re.compile(r"\((.+)\)")
-
-
-def strip_parans(text: str):
-    """Strip nested parans"""
-
-    m = re.fullmatch(PAT_NESTED_PARANS, text)
-    while m:
-        text = m.group(1)
-        m = re.fullmatch(PAT_NESTED_PARANS, text)
-
-    return text
-
 
 def split_expression(text: str):
     """
@@ -61,7 +47,7 @@ def split_expression(text: str):
 
             # Check if we finished parsing parans
             if counter == 0:
-                expr_text = strip_parans(text[start + 1 : pos])
+                expr_text = text[start + 1 : pos]
 
                 if len(expr_text) == 0:
                     raise ParserError(f"Empty parans in snippet {text} are invalid.")
