@@ -62,7 +62,7 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
 
     else:
         raise ReducerError(
-            f"Unable to find free vairables for expression {expr} of invalid type {expr.__class__}."
+            f"Unable to find free vairables for expression '{expr}' of invalid type {expr.__class__}."
         )
 
     return (free_symbols, bound_symbols)
@@ -94,7 +94,7 @@ def rename_symbol(expr, target_symbol, new_symbol):
 
         return Application(expr_1, expr_2)
 
-    raise ReducerError(f"Unable to rename symbol for expression {expr}.")
+    raise ReducerError(f"Unable to rename symbol for expression '{expr}'.")
 
 
 def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expression:
@@ -129,7 +129,7 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
 
                 if new_symbol is None:
                     raise ReducerError(
-                        "Unable to rename symbol {s} as all replacement symbols are exhausted."
+                        f"Unable to rename symbol '{s}' as all replacement symbols are exhausted."
                     )
 
                 func = rename_symbol(func, s, new_symbol)
@@ -145,7 +145,7 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
 
         return Application(expr_1, expr_2)
 
-    raise ReducerError(f"Unable to replace {target} in {expr}.")
+    raise ReducerError(f"Unable to replace '{target}' in '{expr}'.")
 
 
 def reduce_expression_iteration(expr: Expression) -> Expression:
@@ -171,7 +171,7 @@ def reduce_expression_iteration(expr: Expression) -> Expression:
     if isinstance(expr, Symbol):
         return expr
 
-    raise ReducerError(f"Unable to reduce expression: {expr}.")
+    raise ReducerError(f"Unable to reduce expression:\n    '{expr}'")
 
 
 def reduce_expression(expr: Expression) -> Expression:

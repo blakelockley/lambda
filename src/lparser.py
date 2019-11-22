@@ -50,7 +50,7 @@ def split_expression(text: str):
                 expr_text = text[start + 1 : pos]
 
                 if len(expr_text) == 0:
-                    raise ParserError(f"Empty parans in snippet {text} are invalid.")
+                    raise ParserError(f"Empty parans in snippet '{text}' are invalid.")
 
                 result.append(expr_text)
 
@@ -113,4 +113,4 @@ def parse_expression(text: str):
 
         return Application(expr_1, expr_2)
 
-    raise ParserError(f"Unable to parse expression: {text}")
+    raise ParserError(f"Unable to parse expression:\n    {text}")

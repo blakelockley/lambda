@@ -22,10 +22,15 @@ def run_repl(args):
         if line in EXIT_COMMANDS:
             break
 
-        # Evaluate
-        expr = parse_expression(line)
-        reduced = reduce_expression(expr)
+        try:
+            # Evaluate
+            expr = parse_expression(line)
+            reduced = reduce_expression(expr)
 
-        # Print
-        output = str(reduced).replace("\\", "λ")  # Revert slashes for printing
-        print(output)
+            # Print
+            output = str(reduced).replace("\\", "λ")  # Revert slashes for printing
+            print(output)
+
+        except Exception as e:
+            print(f"{e.__class__.__name__}: {e}")
+
