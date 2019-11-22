@@ -25,11 +25,11 @@ def run_repl(args):
         try:
             # Evaluate
             expr = parse_expression(line)
-            reduced = reduce_expression(expr)
+            for expr in reduce_expression(expr):
 
-            # Print
-            output = str(reduced).replace("\\", "λ")  # Revert slashes for printing
-            print(output)
+                # Print
+                output = str(expr).replace("\\", "λ")  # Revert slashes for printing
+                print(output)
 
         except Exception as e:
             print(f"{e.__class__.__name__}: {e}")

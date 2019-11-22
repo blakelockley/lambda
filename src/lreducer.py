@@ -148,37 +148,48 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
     raise ReducerError(f"Unable to replace '{target}' in '{expr}'.")
 
 
-def reduce_expression_iteration(expr: Expression) -> Expression:
+def reduce_expression(expr: Expression, definitions={}) -> Expression:
 
-    # Application
-    if isinstance(expr, Application):
-        lhs = expr.expr_1
-        rhs = expr.expr_2
+    # Recursive helper function
+    def _reduce(expr):
 
-        if isinstance(lhs, Function):
-            symbol = lhs.symbol
-            return substitute(symbol, lhs.expr, rhs)
+        # Application
+        if isinstance(expr, Application):
+            lhs = expr.expr_1
+            rhs = expr.expr_2
 
-        reduced_rhs = reduce_expression_iteration(rhs)
-        reduced_lhs = reduce_expression_iteration(lhs)
-        return Application(reduced_lhs, reduced_rhs)
+            if isinstance(lhs, Function):
+                symbol = lhs.symbol
+                return substitute(symbol, lhs.expr, rhs)
 
-    # Function
-    if isinstance(expr, Function):
-        return Function(expr.symbol, reduce_expression_iteration(expr.expr))
+            reduced_rhs = _reduce(rhs)
+            reduced_lhs = _reduce(lhs)
+            return Application(reduced_lhs, reduced_rhs)
 
-    # Symbol (Leaf)
-    if isinstance(expr, Symbol):
-        return expr
+        # Function
+        if isinstance(expr, Function):
+            return Function(expr.symbol, _reduce(expr.expr))
 
-    raise ReducerError(f"Unable to reduce expression:\n    '{expr}'")
+        # if isinstance(expr, DefinitionCall):
+        #     name =
 
+        # Symbol (Leaf)
+        if isinstance(expr, Symbol):
+            return expr
 
-def reduce_expression(expr: Expression) -> Expression:
+        raise ReducerError(f"Unable to reduce expression:\n    '{expr}'")
 
-    reduced = reduce_expression_iteration(expr)
+    # Reduce and loop
+    reduced = _reduce(expr)
+
+    # If expr is already reduced, yeild expr as is
+    if reduced == expr:
+        yield expr
+
+    # Continue to reduce and yield intermediate stages
     while reduced != expr:
         expr = reduced
-        reduced = reduce_expression_iteration(expr)
+        reduced = _reduce(expr)
 
-    return reduced
+        yield expr
+
