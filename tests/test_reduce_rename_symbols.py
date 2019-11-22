@@ -24,3 +24,39 @@ def test_reduce_rename_symbol_twice():
     )
 
     assert_comparison(renamed, expected)
+
+
+def test_reduce_rename_nested_renamed():
+    expr = parse_expression(r"\x.x(\x.x)")
+    renamed = rename_symbol(expr, Symbol("x"), Symbol("a"))
+
+    excepted = Function(
+        Symbol("a"), Application(Symbol("a"), Function(Symbol("a"), Symbol("a")))
+    )
+
+    assert_comparison(renamed, excepted)
+
+
+def test_reduce_rename_nested_bound():
+    expr = parse_expression(r"\x.x(\y.x)")
+    renamed = rename_symbol(expr, Symbol("x"), Symbol("a"))
+
+    excepted = Function(
+        Symbol("a"), Application(Symbol("a"), Function(Symbol("y"), Symbol("a")))
+    )
+
+    assert_comparison(renamed, excepted)
+
+
+def test_reduce_rename_nested_free():
+    expr = parse_expression(r"\y.y(\y.xy)")
+    renamed = rename_symbol(expr, Symbol("x"), Symbol("a"))
+
+    excepted = Function(
+        Symbol("y"),
+        Application(
+            Symbol("y"), Function(Symbol("y"), Application(Symbol("a"), Symbol("y")))
+        ),
+    )
+
+    assert_comparison(renamed, excepted)
