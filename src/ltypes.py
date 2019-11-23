@@ -73,19 +73,22 @@ class Application(Expression):
         return self.expr_1 == other.expr_1 and self.expr_2 == other.expr_2
 
 
-class Definition:
-    def __init__(self, name, func):
+class Definition(Expression):
+    def __init__(self, name, expr):
         self.name = name
-        self.func = func
+        self.expr = expr
 
     def __repr__(self):
-        return f"Definition({repr(self.name)}, {repr(self.func)})"
+        return f"Definition({repr(self.name)}, {repr(self.expr)})"
 
     def __str__(self):
-        return f"{self.name} = {self.func}"
+        return f"{self.name} = {self.expr}"
 
     def __eq__(self, other):
-        return self.name == other.name and self.func == other.func
+        if not isinstance(other, Definition):
+            return False
+
+        return self.name == other.name and self.expr == other.expr
 
 
 class DefinitionCall(Expression):
@@ -98,5 +101,8 @@ class DefinitionCall(Expression):
     def __str__(self):
         return f"{self.name}"
 
-    def __eq__(self):
+    def __eq__(self, other):
+        if not isinstance(other, DefinitionCall):
+            return False
+
         return self.name == other.name

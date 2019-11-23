@@ -12,7 +12,7 @@ PAT_APPLICATION = re.compile(r"(.+)([a-z]|\\[a-z]+\..+|\(.+\))")
 
 # Defintion
 PAT_DEFINITION = re.compile(r"(\w+)\s*=\s*(.+)")  # defn = <expr>
-PAT_DEFINITION_CALL = re.compile(r"\$\(?\w+\)?")  # $defn | $(defn)
+PAT_DEFINITION_CALL = re.compile(r"\$(\w+)")  # $defn
 
 
 def split_expression(text: str):
@@ -72,6 +72,14 @@ def split_expression(text: str):
 
 def parse_expression(text: str):
 
+    # Definition
+    m = re.fullmatch(PAT_DEFINITION, text)
+    if m:
+        name, expr_text = m.groups()
+        expr = parse_expression(expr_text)
+
+        return Definition(name, expr)
+
     # Top-level (relative) expressions
     exprs = split_expression(text)
 
@@ -109,6 +117,12 @@ def parse_expression(text: str):
             func = Function(Symbol(symbols.pop()), func)
 
         return func
+
+    # DefinitionCall
+    m = re.fullmatch(PAT_DEFINITION_CALL, text)
+    if m:
+        name = m.group(1)
+        return DefinitionCall(name)
 
     # Application
     m = re.fullmatch(PAT_APPLICATION, text)
