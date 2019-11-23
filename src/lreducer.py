@@ -1,5 +1,12 @@
 from typing import Tuple, List, Iterator
-from .ltypes import Expression, Application, Function, Symbol
+from .ltypes import (
+    Expression,
+    Application,
+    Function,
+    Symbol,
+    Definition,
+    DefinitionCall,
+)
 from .lexceptions import ReducerError
 
 # Backup symbols to be used in renaming conflicting bound vs free symbols
@@ -45,6 +52,14 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
         frees, bounds = find_variable_bindings(func.expr, _func_symbols=func_symbols)
         free_symbols.extend(frees)
         bound_symbols.extend([func.symbol] + bounds)
+
+    elif isinstance(expr, DefinitionCall):
+        call = expr
+        func_symbols.append(func.symbol)
+
+        frees, bounds = find_variable_bindings(call.expr, _func_symbols=func_symbols)
+        free_symbols.extend(frees)
+        bound_symbols.extend(bounds)
 
     elif isinstance(expr, Application):
         appl = expr
@@ -149,7 +164,18 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
 
 
 # Recursive helper function
-def reduce(expr):
+def reduce(expr, defns={}):
+
+    if isinstance(expr, Definition):
+        defn = expr
+        name = defn.name
+
+        # Remove expression if it included in definitions table
+        # NOTE: This means named recursion is unavaliable
+        if name in defns:
+            defns.pop(name)
+
+        return Definition(name, reduce(defn.expr, defns=defns))
 
     # Application
     if isinstance(expr, Application):
@@ -160,16 +186,23 @@ def reduce(expr):
             symbol = lhs.symbol
             return substitute(symbol, lhs.expr, rhs)
 
-        reduced_rhs = reduce(rhs)
-        reduced_lhs = reduce(lhs)
+        reduced_rhs = reduce(rhs, defns=defns)
+        reduced_lhs = reduce(lhs, defns=defns)
         return Application(reduced_lhs, reduced_rhs)
 
     # Function
     if isinstance(expr, Function):
-        return Function(expr.symbol, reduce(expr.expr))
+        return Function(expr.symbol, reduce(expr.expr, defns=defns))
 
-    # if isinstance(expr, DefinitionCall):
-    #     name =
+    # Definition Call
+    if isinstance(expr, DefinitionCall):
+        call = expr
+        defn = defns.get(call.name)
+
+        if defn is None:
+            raise ReducerError(f"Call to definition '{call.name}' that does not exist.")
+
+        return defn.expr
 
     # Symbol (Leaf)
     if isinstance(expr, Symbol):
@@ -184,10 +217,10 @@ def reduce_expression(expr: Expression, definitions={}) -> Expression:
     """
 
     # Reduce and loop
-    reduced = reduce(expr)
+    reduced = reduce(expr, defns=definitions)
     while reduced != expr:
         expr = reduced
-        reduced = reduce(expr)
+        reduced = reduce(expr, defns=definitions)
 
     return expr
 
@@ -200,7 +233,7 @@ def generate_reduced_expressions(
     """
 
     # Reduce original expression
-    reduced = reduce(expr)
+    reduced = reduce(expr, defns=definitions)
 
     # If original expression is already reduced, yeild expr as is
     if reduced == expr:
@@ -209,7 +242,7 @@ def generate_reduced_expressions(
     # Continue to reduce and yield intermediate stages
     while reduced != expr:
         expr = reduced
-        reduced = reduce(expr)
+        reduced = reduce(expr, defns=definitions)
 
         yield expr
 
