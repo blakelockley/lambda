@@ -1,4 +1,5 @@
 from typing import Iterator
+from .ltypes import Definition
 from .lparser import parse_expression
 from .lreducer import reduce_expression, generate_reduced_expressions
 from .debug import print_debug
@@ -18,6 +19,9 @@ def print_expr(expr):
 def run_repl(args):
     print(WELCOME_MESSAGE)
 
+    # Store definitions
+    defns = {}
+
     # Proccess switches in args
     verbose = any([True for opt in args if opt in ("-v", "--verbose")])
 
@@ -34,16 +38,22 @@ def run_repl(args):
         line = line.strip()
         line = line.replace("λ", "\\")  # Replace λ with substitued lambda characted
 
+        if line == "":
+            continue
+
         if line in EXIT_COMMANDS:
             break
 
         try:
             # Evaluate
             expr = parse_expression(line)
-            reduced = reducer(expr)
+            reduced = reducer(expr, definitions=defns)
 
-            # Print
-            if isinstance(reduced, Iterator):
+            # Print (or store definition)
+            if isinstance(expr, Definition):
+                defns[expr.name] = expr
+
+            elif isinstance(reduced, Iterator):
                 for expr in reduced:
                     print_expr(expr)
 

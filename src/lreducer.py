@@ -24,7 +24,7 @@ SYMBOL_BACKUPS = map(Symbol, "tcdefghijklmnopq")
 Bindings = Tuple[List[Symbol], List[Symbol]]
 
 
-def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
+def find_variable_bindings(expr, *, _func_symbols=[], _defns={}) -> Bindings:
 
     # Free
     # <name> is free in <name>.
@@ -49,23 +49,31 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
         func = expr
         func_symbols.append(func.symbol)
 
-        frees, bounds = find_variable_bindings(func.expr, _func_symbols=func_symbols)
+        frees, bounds = find_variable_bindings(
+            func.expr, _func_symbols=func_symbols, _defns=_defns
+        )
         free_symbols.extend(frees)
         bound_symbols.extend([func.symbol] + bounds)
 
     elif isinstance(expr, DefinitionCall):
         call = expr
-        func_symbols.append(func.symbol)
+        defn = _defns.get(call.name)
 
-        frees, bounds = find_variable_bindings(call.expr, _func_symbols=func_symbols)
+        frees, bounds = find_variable_bindings(
+            defn.expr, _func_symbols=func_symbols, _defns=_defns
+        )
         free_symbols.extend(frees)
         bound_symbols.extend(bounds)
 
     elif isinstance(expr, Application):
         appl = expr
 
-        bindings_1 = find_variable_bindings(appl.expr_1, _func_symbols=func_symbols)
-        bindings_2 = find_variable_bindings(appl.expr_2, _func_symbols=func_symbols)
+        bindings_1 = find_variable_bindings(
+            appl.expr_1, _func_symbols=func_symbols, _defns=_defns
+        )
+        bindings_2 = find_variable_bindings(
+            appl.expr_2, _func_symbols=func_symbols, _defns=_defns
+        )
 
         frees, bounds = bindings_1
         free_symbols.extend(frees)
@@ -83,7 +91,7 @@ def find_variable_bindings(expr, *, _func_symbols=[]) -> Bindings:
     return (free_symbols, bound_symbols)
 
 
-def rename_symbol(expr, target_symbol, new_symbol):
+def rename_symbol(expr, target_symbol, new_symbol, _defns={}):
 
     if isinstance(expr, Symbol):
         symbol = expr
@@ -94,25 +102,33 @@ def rename_symbol(expr, target_symbol, new_symbol):
 
     elif isinstance(expr, Function):
         func = expr
-        func_expr = rename_symbol(func.expr, target_symbol, new_symbol)
+        func_expr = rename_symbol(func.expr, target_symbol, new_symbol, _defns=_defns)
 
         if func.symbol == target_symbol:
             return Function(new_symbol, func_expr)
 
         return Function(func.symbol, func_expr)
 
+    elif isinstance(expr, DefinitionCall):
+        call = expr
+        defn = _defns.get(call.name)
+
+        return rename_symbol(defn, target_symbol, new_symbol, _defns=_defns)
+
     elif isinstance(expr, Application):
         appl = expr
 
-        expr_1 = rename_symbol(appl.expr_1, target_symbol, new_symbol)
-        expr_2 = rename_symbol(appl.expr_2, target_symbol, new_symbol)
+        expr_1 = rename_symbol(appl.expr_1, target_symbol, new_symbol, _defns=_defns)
+        expr_2 = rename_symbol(appl.expr_2, target_symbol, new_symbol, _defns=_defns)
 
         return Application(expr_1, expr_2)
 
     raise ReducerError(f"Unable to rename symbol for expression '{expr}'.")
 
 
-def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expression:
+def substitute(
+    target: Symbol, expr: Expression, new_expr: Expression, _defns={}
+) -> Expression:
 
     # Symbol
     if isinstance(expr, Symbol):
@@ -130,8 +146,8 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
 
         # Transverse further to find and replace symbol
         else:
-            func_frees, func_bounds = find_variable_bindings(func)
-            new_expr_frees, _ = find_variable_bindings(new_expr)
+            func_frees, func_bounds = find_variable_bindings(func, _defns=_defns)
+            new_expr_frees, _ = find_variable_bindings(new_expr, _defns=_defns)
 
             # Rename any symbols that will conflict
             renamable_symbols = [s for s in func_bounds if s in new_expr_frees]
@@ -152,11 +168,18 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
             body_expr = substitute(target, func.expr, new_expr)
             return Function(func.symbol, body_expr)
 
+    # Definition Call
+    if isinstance(expr, DefinitionCall):
+        call = expr
+        defn = _defns.get(call.name)
+
+        return rename_symbol(target, defn, new_expr, _defns=_defns)
+
     # Application
     if isinstance(expr, Application):
         appl = expr
-        expr_1 = substitute(target, appl.expr_1, new_expr)
-        expr_2 = substitute(target, appl.expr_2, new_expr)
+        expr_1 = substitute(target, appl.expr_1, new_expr, _defns=_defns)
+        expr_2 = substitute(target, appl.expr_2, new_expr, _defns=_defns)
 
         return Application(expr_1, expr_2)
 
@@ -184,7 +207,7 @@ def reduce(expr, defns={}):
 
         if isinstance(lhs, Function):
             symbol = lhs.symbol
-            return substitute(symbol, lhs.expr, rhs)
+            return substitute(symbol, lhs.expr, rhs, _defns=defns)
 
         reduced_rhs = reduce(rhs, defns=defns)
         reduced_lhs = reduce(lhs, defns=defns)
