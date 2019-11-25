@@ -4,3 +4,7 @@ class ParserError(Exception):
 
 class ReducerError(Exception):
     pass
+
+
+class AnalyserError(Exception):
+    pass
