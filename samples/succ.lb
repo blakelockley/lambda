@@ -1,0 +1,9 @@
+0 = \sz.z
+1 = \sz.sz
+2 = \sz.s(sz)
+3 = \sz.s(s(sz))
+4 = \sz.s(s(s(sz)))
+
+succ = \wyx.y(wyx)
+
+($4)($succ)($2)
