@@ -1,6 +1,7 @@
 from typing import Iterator
 from .ltypes import Definition
 from .lparser import parse_expression
+from .lanalyser import analyse_definitions
 from .lreducer import reduce_expression, generate_reduced_expressions
 from .debug import print_debug
 
@@ -28,6 +29,7 @@ def run_repl(args):
     # Set reducer based on verbose switch
     reducer = reduce_expression
     if verbose:
+        print("* Running in verbose mode.")
         reducer = generate_reduced_expressions
 
     # Loop
@@ -47,12 +49,14 @@ def run_repl(args):
         try:
             # Evaluate
             expr = parse_expression(line)
-            reduced = reducer(expr, definitions=defns)
+            expr = analyse_definitions(expr, defns)
+            reduced = reducer(expr)
 
-            # Print (or store definition)
+            # Store definition
             if isinstance(expr, Definition):
                 defns[expr.name] = expr
 
+            # Print
             elif isinstance(reduced, Iterator):
                 for expr in reduced:
                     print_expr(expr)
