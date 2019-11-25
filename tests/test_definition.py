@@ -2,6 +2,7 @@ import pytest
 from ..src.ltypes import Definition, DefinitionCall, Symbol, Function, Application
 from ..src.lparser import parse_expression
 from ..src.lreducer import reduce_expression
+from ..src.lanalyser import analyse_definitions
 from ..src.lexceptions import ParserError
 
 
@@ -70,6 +71,7 @@ def test_evaluate_definition():
     text = r"($name)a"
 
     expr = parse_expression(text)
-    result = reduce_expression(expr, definitions=defns)
+    expr = analyse_definitions(expr, defns)
+    expr = reduce_expression(expr)
 
-    assert result == Symbol("a")
+    assert expr == Symbol("a")
