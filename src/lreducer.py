@@ -115,34 +115,12 @@ def substitute(target: Symbol, expr: Expression, new_expr: Expression) -> Expres
     if isinstance(expr, Function):
         func = expr
 
-        # If a function contains this target as its bound symbol end replacing
-        #   TODO: Ensure all symbols are unique for this to be correct
+        # If a function contains this target as its bound symbol stop replacing
         if func.symbol == target:
             return expr
 
-        # Transverse further to find and replace symbol
-        else:
-            func_frees, func_bounds = find_variable_bindings(func)
-            new_expr_frees, _ = find_variable_bindings(new_expr)
-
-            # Rename any symbols that will conflict
-            renamable_symbols = [s for s in func_bounds if s in new_expr_frees]
-            for s in renamable_symbols:
-                func_symbols = func_frees + func_bounds
-
-                new_symbol = next(
-                    filter(lambda s: s not in func_symbols, SYMBOL_BACKUPS), None
-                )
-
-                if new_symbol is None:
-                    raise ReducerError(
-                        f"Unable to rename symbol '{s}' as all replacement symbols are exhausted."
-                    )
-
-                func = rename_symbol(func, s, new_symbol)
-
-            body_expr = substitute(target, func.expr, new_expr)
-            return Function(func.symbol, body_expr)
+        body_expr = substitute(target, func.expr, new_expr)
+        return Function(func.symbol, body_expr)
 
     # Application
     if isinstance(expr, Application):
@@ -171,11 +149,32 @@ def reduce(expr):
         rhs = expr.expr_2
 
         if isinstance(lhs, Function):
-            symbol = lhs.symbol
-            return substitute(symbol, lhs.expr, rhs)
+            func = lhs
 
-        reduced_rhs = reduce(rhs)
+            func_frees, func_bounds = find_variable_bindings(func)
+            new_expr_frees, _ = find_variable_bindings(rhs)
+
+            # Rename any symbols that will conflict
+            renamable_symbols = [s for s in func_bounds if s in new_expr_frees]
+            for s in renamable_symbols:
+                func_symbols = func_frees + func_bounds
+
+                new_symbol = next(
+                    filter(lambda s: s not in func_symbols, SYMBOL_BACKUPS), None
+                )
+
+                if new_symbol is None:
+                    raise ReducerError(
+                        f"Unable to rename symbol '{s}' as all replacement symbols are exhausted."
+                    )
+
+                func = rename_symbol(func, s, new_symbol)
+
+            symbol = func.symbol
+            return substitute(symbol, func.expr, rhs)
+
         reduced_lhs = reduce(lhs)
+        reduced_rhs = reduce(rhs)
         return Application(reduced_lhs, reduced_rhs)
 
     # Function
