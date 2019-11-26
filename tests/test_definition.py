@@ -3,7 +3,9 @@ from ..src.ltypes import Definition, DefinitionCall, Symbol, Function, Applicati
 from ..src.lparser import parse_expression
 from ..src.lreducer import reduce_expression
 from ..src.lanalyser import analyse_definitions
+from ..src.levaluator import evaluate_source
 from ..src.lexceptions import ParserError
+from ..src.debug import assert_comparison
 
 
 def test_parse_definition_symbol():
@@ -75,3 +77,19 @@ def test_evaluate_definition():
     expr = reduce_expression(expr)
 
     assert expr == Symbol("a")
+
+
+# @pytest.mark.skip
+def test_evaluate_succ_multi_names():
+
+    source = r"""
+    1 = \sz.sz
+    3 = \sz.s(s(sz))
+    succ = \wyx.y(wyx)
+    ($3)($succ)($1)
+    """
+
+    expr = evaluate_source(source)
+    expected = parse_expression(r"\yx.y(y(y(y(y(yx)))))")
+
+    assert_comparison(expr, expected)
