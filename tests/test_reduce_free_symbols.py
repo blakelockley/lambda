@@ -101,3 +101,12 @@ def test_reduce_rename_symbols_find_free_deep_nested():
 
     assert frees == [Symbol("a")]
 
+
+def test_reduce_bound_variables_succ():
+    # λxyw.y(wxy) -> bound: [xyw], free: []
+
+    expr = parse_expression(r"\xyw.y(wxy)")
+    frees, bounds = find_variable_bindings(expr)
+
+    assert frees == []
+    assert bounds == [Symbol("x"), Symbol("y"), Symbol("w")]
